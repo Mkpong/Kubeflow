@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: resnet-mnist-train
+  namespace: kubeflow-user-example-com
+spec:
+  restartPolicy: Never
+  containers:
+    - name: trainer
+      image: mkpong/resnet-mnist-trainer:latest
+      volumeMounts:
+        - name: model-volume
+          mountPath: /mnt/pvc
+      resources:
+        limits:
+          nvidia.com/gpu: 4
+  volumes:
+    - name: model-volume
+      persistentVolumeClaim:
+        claimName: model-pvc

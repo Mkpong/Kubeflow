@@ -1,0 +1,11 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: test
+  namespace: kubeflow-user-example-com
+spec:
+  predictor:
+    model:
+      modelFormat:
+        name: pytorch
+      storageUri: "pvc://model-pvc/resnet-mnist"

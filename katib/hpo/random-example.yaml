@@ -1,0 +1,74 @@
+apiVersion: kubeflow.org/v1beta1
+kind: Experiment
+metadata:
+  namespace: kubeflow-user-example-com
+  name: test-automl2
+spec:
+  objective:
+    type: maximize
+    goal: 0.99
+    objectiveMetricName: accuracy
+    additionalMetricNames:
+      - loss
+  metricsCollectorSpec:
+    source:
+      filter:
+        metricsFormat:
+          - "{metricName: ([\\w|-]+), metricValue: ((-?\\d+)(\\.\\d+)?)}"
+      fileSystemPath:
+        path: "/katib/mnist.log"
+        kind: File
+    collector:
+      kind: File
+  algorithm:
+    algorithmName: random
+  parallelTrialCount: 3
+  maxTrialCount: 12
+  maxFailedTrialCount: 3
+  parameters:
+    - name: lr
+      parameterType: double
+      feasibleSpace:
+        min: "0.01"
+        max: "0.03"
+    - name: momentum
+      parameterType: double
+      feasibleSpace:
+        min: "0.3"
+        max: "0.7"
+  trialTemplate:
+    retain: true
+    primaryContainerName: training-container
+    trialParameters:
+      - name: learningRate
+        description: Learning rate for the training model
+        reference: lr
+      - name: momentum
+        description: Momentum for the training model
+        reference: momentum
+    trialSpec:
+      apiVersion: batch/v1
+      kind: Job
+      spec:
+        template:
+          metadata:
+            annotations:
+              sidecar.istio.io/inject: 'false'
+          spec:
+            containers:
+              - name: training-container
+                image: bigdata-150.kr-central-2.kcr.dev/kc-kubeflow/katib-pytorch-mnist-gpu:v0.15.0.1a
+                command:
+                  - "python3"
+                  - "/opt/pytorch-mnist/mnist.py"
+                  - "--epochs=1"
+                  - "--log-path=/katib/mnist.log"
+                  - "--lr=${trialParameters.learningRate}"
+                  - "--momentum=${trialParameters.momentum}"
+                resources:
+                  requests:
+                    cpu: '1'
+                    memory: 2Gi
+                  limits:
+                    nvidia.com/gpu: 2
+            restartPolicy: Never

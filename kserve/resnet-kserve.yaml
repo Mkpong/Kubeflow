@@ -1,0 +1,12 @@
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: resnet-mnist
+  namespace: kubeflow-user-example-com
+spec:
+  predictor:
+    pytorch:
+      storageUri: "pvc://model-pvc/resnet-mnist"
+      resources:
+        limits:
+          nvidia.com/gpu: 2
